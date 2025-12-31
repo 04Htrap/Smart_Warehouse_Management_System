@@ -17,4 +17,11 @@ router.get(
   inventoryController.getInventoryForecast
 );
 
+router.post(
+  '/restock',
+  authenticate,
+  authorize(['WAREHOUSE_MANAGER', 'ADMIN']),
+  inventoryController.restockInventory
+);
+
 module.exports = router;

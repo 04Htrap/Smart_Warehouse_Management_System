@@ -6,6 +6,7 @@ exports.getInventory = async (req, res) => {
       SELECT 
         i.product_name,
         i.quantity,
+        i.warehouse_id,
         w.name AS warehouse_name
       FROM inventory i
       JOIN warehouses w ON i.warehouse_id = w.id
@@ -58,6 +59,85 @@ exports.getInventoryForecast = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// ===============================
+// RESTOCK INVENTORY
+// Add quantity to existing inventory
+// Creates product in products table if it doesn't exist
+// ===============================
+exports.restockInventory = async (req, res) => {
+  const { product_name, warehouse_id, quantity } = req.body;
+
+  if (!product_name || !warehouse_id || quantity === undefined || quantity <= 0) {
+    return res.status(400).json({ 
+      error: 'product_name, warehouse_id, and quantity (positive number) are required' 
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Ensure product exists in products table (insert if it doesn't exist)
+    await client.query(
+      `INSERT INTO products (product_name) 
+       VALUES ($1) 
+       ON CONFLICT (product_name) DO NOTHING`,
+      [product_name]
+    );
+
+    // Check if inventory record exists
+    const checkResult = await client.query(
+      `SELECT quantity FROM inventory 
+       WHERE product_name = $1 AND warehouse_id = $2`,
+      [product_name, warehouse_id]
+    );
+
+    if (checkResult.rowCount === 0) {
+      // Create new inventory record if it doesn't exist
+      await client.query(
+        `INSERT INTO inventory (product_name, warehouse_id, quantity)
+         VALUES ($1, $2, $3)`,
+        [product_name, warehouse_id, quantity]
+      );
+
+      await client.query('COMMIT');
+
+      return res.json({
+        message: 'Inventory record created and restocked successfully',
+        product_name,
+        warehouse_id,
+        new_quantity: quantity
+      });
+    }
+
+    // Update existing inventory
+    const updateResult = await client.query(
+      `UPDATE inventory 
+       SET quantity = quantity + $1 
+       WHERE product_name = $2 AND warehouse_id = $3
+       RETURNING quantity`,
+      [quantity, product_name, warehouse_id]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      message: 'Inventory restocked successfully',
+      product_name,
+      warehouse_id,
+      quantity_added: quantity,
+      new_quantity: updateResult.rows[0].quantity
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 };
 

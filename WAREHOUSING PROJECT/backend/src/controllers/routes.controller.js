@@ -6,7 +6,7 @@ exports.optimizeFromOrders = async (req, res) => {
     const ordersResult = await pool.query(
       `SELECT id, delivery_city
        FROM orders
-       WHERE status = 'CREATED'
+       WHERE status = 'OPTIMIZED'
        AND warehouse_id = 1`
     );
 

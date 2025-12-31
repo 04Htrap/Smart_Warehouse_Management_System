@@ -3,6 +3,13 @@ const router = express.Router();
 const ordersController = require('../controllers/orders.controller');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 
+// GET all orders - accessible by all authenticated users
+router.get(
+  '/',
+  authenticate,
+  ordersController.getAllOrders
+);
+
 router.post(
   '/',
   authenticate,

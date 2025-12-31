@@ -18,11 +18,11 @@ exports.register = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, role)
-       VALUES ($1, $2, $3, 'ORDER_CREATOR')
-       RETURNING id, role`,
+      `INSERT INTO users (name, email, password, role, is_active)
+      VALUES ($1, $2, $3, 'ORDER_CREATOR', true)
+      RETURNING id, role`,
       [name, email, hashedPassword]
-    );
+  );
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -41,11 +41,13 @@ exports.register = async (req, res) => {
 // ===============================
 // LOGIN
 // ===============================
+
 exports.login = async (req, res) => {
+  console.log('LOGIN BODY FROM FRONTEND:', req.body);
   const { email, password } = req.body;
 
   const result = await pool.query(
-    `SELECT * FROM users WHERE email = $1 AND is_active = true`,
+    `SELECT * FROM users WHERE email = $1`,
     [email]
   );
 

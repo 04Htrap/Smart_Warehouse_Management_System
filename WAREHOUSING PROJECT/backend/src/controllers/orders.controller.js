@@ -1,11 +1,73 @@
 const pool = require('../config/db');
 
 // ===============================
+// GET ALL ORDERS
+// Supports optional status filter via query parameter
+// ORDER_CREATOR users only see their own orders
+// ADMIN and WAREHOUSE_MANAGER see all orders
+// ===============================
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const userRole = req.user.role;
+    const userId = req.user.user_id;
+    
+    let query = `
+      SELECT 
+        o.id,
+        o.warehouse_id,
+        o.delivery_city,
+        o.status,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_name', oi.product_name,
+              'quantity', oi.quantity
+            )
+          ) FILTER (WHERE oi.id IS NOT NULL),
+          '[]'::json
+        ) as items
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+    `;
+    
+    const queryParams = [];
+    const conditions = [];
+    
+    // ORDER_CREATOR users only see their own orders
+    if (userRole === 'ORDER_CREATOR') {
+      conditions.push('o.user_id = $' + (queryParams.length + 1));
+      queryParams.push(userId);
+    }
+    // ADMIN and WAREHOUSE_MANAGER see all orders (no filter)
+    
+    if (status) {
+      conditions.push('o.status = $' + (queryParams.length + 1));
+      queryParams.push(status);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' GROUP BY o.id, o.warehouse_id, o.delivery_city, o.status';
+    query += ' ORDER BY o.id DESC';
+    
+    const result = await pool.query(query, queryParams);
+    
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ===============================
 // CREATE ORDER (STATUS: CREATED)
 // Inventory is NOT reduced here
 // ===============================
 exports.createOrder = async (req, res) => {
   const { warehouse_id, delivery_city, items } = req.body;
+  const userId = req.user.user_id; // Get user ID from authenticated token
   const client = await pool.connect();
 
   try {
@@ -15,12 +77,12 @@ exports.createOrder = async (req, res) => {
       throw new Error('delivery_city is required');
     }
 
-    // Create order
+    // Create order with user_id to track who created it
     const orderResult = await client.query(
-      `INSERT INTO orders (warehouse_id, delivery_city, status)
-       VALUES ($1, $2, 'CREATED')
+      `INSERT INTO orders (warehouse_id, delivery_city, status, user_id)
+       VALUES ($1, $2, 'CREATED', $3)
        RETURNING id`,
-      [warehouse_id, delivery_city]
+      [warehouse_id, delivery_city, userId]
     );
 
     const orderId = orderResult.rows[0].id;
@@ -115,7 +177,7 @@ exports.dispatchOrder = async (req, res) => {
       throw new Error('Order not in OPTIMIZED state');
     }
 
-    // Reduce inventory
+    // Reduce inventory and record sales
     for (const item of itemsResult.rows) {
       const stockResult = await client.query(
         `SELECT quantity FROM inventory
@@ -132,6 +194,21 @@ exports.dispatchOrder = async (req, res) => {
          SET quantity = quantity - $1
          WHERE product_name = $2 AND warehouse_id = $3`,
         [item.quantity, item.product_name, item.warehouse_id]
+      );
+
+      // Ensure product exists in products table (required for foreign key constraint)
+      await client.query(
+        `INSERT INTO products (product_name) 
+         VALUES ($1) 
+         ON CONFLICT (product_name) DO NOTHING`,
+        [item.product_name]
+      );
+
+      // Insert sales record
+      await client.query(
+        `INSERT INTO sales_records (product_name, quantity_sold, date)
+         VALUES ($1, $2, CURRENT_DATE)`,
+        [item.product_name, item.quantity]
       );
     }
 
