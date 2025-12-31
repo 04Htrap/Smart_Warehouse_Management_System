@@ -49,6 +49,14 @@ This project demonstrates backend system design, data consistency, and practical
    - Create new orders
    - View order history
    - Dashboard overview
+  
+## 🌐 Deployment
+
+The application is deployed and accessible at:
+
+**Live Application:** []()
+
+---
 
 ## 📊 Workflow Charts
 
@@ -147,14 +155,6 @@ Smart_Warehouse_Management_System/
 │       └── data_preprocess/        # Data preprocessing scripts
 └── README.md
 ```
-
-## 🌐 Deployment
-
-The application is deployed and accessible at:
-
-**Live Application:** []()
-
----
 
 ## Prerequisites
 
