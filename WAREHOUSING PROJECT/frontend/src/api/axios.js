@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://smart-warehouse-management-system.onrender.com',
+  baseURL: 'https://smart-warehouse-management-system-backend.onrender.com',
 });
 
 api.interceptors.request.use((config) => {
