@@ -11,6 +11,12 @@ router.get(
 );
 
 router.get(
+  '/available',
+  authenticate,
+  inventoryController.getAvailableProducts
+);
+
+router.get(
   '/forecast',
   authenticate,
   authorize(['WAREHOUSE_MANAGER', 'ADMIN']),
