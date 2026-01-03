@@ -54,7 +54,7 @@ This project demonstrates backend system design, data consistency, and practical
 
 The application is deployed and accessible at:
 
-**Live Application:** []()
+**Live Application:** []()https://smart-warehouse-management-system-a7q7.onrender.com
 
 ---
 
