@@ -20,6 +20,29 @@ exports.getInventory = async (req, res) => {
   }
 };
 
+//Get available Products for creating order dropdown
+exports.getAvailableProducts = async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT
+        i.product_name,
+        i.quantity,
+        i.warehouse_id,
+        w.name AS warehouse_name
+      FROM inventory i
+      JOIN warehouses w ON i.warehouse_id = w.id
+      WHERE i.quantity > 0
+      ORDER BY i.product_name;
+    `;
+
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//Gets the forecast of each and every inventory item according to last 5 sales events.
 exports.getInventoryForecast = async (req, res) => {
   try {
     const result = await pool.query(`
