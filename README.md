@@ -1,10 +1,10 @@
-🏭 Smart Warehouse Management System
+## 🏭 Smart Warehouse Management System
 
 A full-stack Smart Warehouse Management System designed to simulate real-world warehouse operations including order lifecycle management, inventory control, route optimization, and sales forecasting, with role-based access control.
 
 This project demonstrates backend system design, data consistency, and practical algorithm usage in a logistics context.
 
-🚀 Features
+## 🚀 Features
 
 ### 🔐 Authentication & Authorization
 - User registration and login
@@ -49,29 +49,17 @@ This project demonstrates backend system design, data consistency, and practical
    - Create new orders
    - View order history
    - Dashboard overview
+  
+## 🌐 Deployment
+
+The application is deployed and accessible at:
+
+**Live Application:** []()https://smart-warehouse-management-system-a7q7.onrender.com
+
+---
 
 ## 📊 Workflow Charts
 
-### Authentication & Access Control
-
-```mermaid
-flowchart TD
-    A[User Visits App] --> B{Logged In?}
-    B -->|No| C[Login/Register]
-    B -->|Yes| D[Validate JWT Token]
-    C --> E[Submit Credentials]
-    E --> F{Valid?}
-    F -->|No| C
-    F -->|Yes| G[Generate JWT Token]
-    G --> D
-    D --> H[Check User Role]
-    H -->|ADMIN| I[Admin Dashboard]
-    H -->|WAREHOUSE_MANAGER| J[Manager Dashboard]
-    H -->|ORDER_CREATOR| K[Creator Dashboard]
-    I --> L[Access Protected Routes]
-    J --> L
-    K --> L
-```
 
 ### Complete Order-to-Delivery Workflow
 
@@ -81,31 +69,31 @@ flowchart TB
     Role -->|CREATOR| Create[Create Order]
     Role -->|MANAGER| Review[Review Orders]
     
-    Create --> Validate[Validate]
+    Create --> Validate[Validate Order]
     Validate -->|Invalid| Create
-    Validate -->|Valid| Save[Save]
+    Validate -->|Valid| Save[Save Order]
     
     Save --> Review
-    Review --> Check{Inventory}
+    Review --> Check{Inventory Check}
     
-    Check -->|OK| Reserve[Reserve]
-    Check -->|Low| Forecast[Forecast<br/>Moving Avg]
-    Check -->|Out| Restock[Restock]
+    Check -->|Sufficient| Reserve[Reserve Items]
+    Check -->|Low| Forecast[Forecast Demand<br/>Moving Average]
+    Check -->|Out| Restock[Restock Order]
     
     Forecast --> Restock
-    Restock --> Update[Update Stock]
+    Restock --> Update[Update Inventory]
     Update --> Reserve
     
-    Reserve --> Collect[Collect]
+    Reserve --> Collect[Collect Orders]
     Collect --> Extract[Extract Locations]
-    Extract --> Calculate[Distances]
-    Calculate --> Optimize[Nearest Neighbor]
-    Optimize --> Route[Route]
-    Route --> Assign[Assign]
+    Extract --> Calculate[Calculate Distances]
+    Calculate --> Optimize[Nearest Neighbor<br/>Algorithm]
+    Optimize --> Route[Optimized Route]
+    Route --> Assign[Assign Vehicle]
     
-    Assign --> Deliver[Deliver]
-    Deliver --> UpdateStatus[Update]
-    UpdateStatus --> Complete([Done])
+    Assign --> Deliver[Deliver Order]
+    Deliver --> UpdateStatus[Update Status]
+    UpdateStatus --> Complete([Complete])
     
     style Start fill:#e1f5ff
     style Create fill:#fff4e1
@@ -114,7 +102,7 @@ flowchart TB
     style Complete fill:#e1f5ff
 ```
 
-🛠️ Tech Stack
+ ## 🛠️ Tech Stack
 
 ### Frontend
 - **React** - UI framework
@@ -174,6 +162,8 @@ Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher)
 - **npm**
 - **PostgreSQL** (v12 or higher)
+
+
 
 ## Installation
 
@@ -238,14 +228,6 @@ DB_NAME=warehouse_db
 cd "../frontend"
 npm install
 ```
-
-## 🌐 Deployment
-
-The application is deployed and accessible at:
-
-**Live Application:** []()
-
----
 
 ## Running the Application
 
@@ -319,10 +301,6 @@ npm run build    # Build for production
 npm run preview  # Preview production build
 npm run lint     # Run ESLint
 ```
-
-## Authors
-
-- Parth Goyal
 
 ---
 

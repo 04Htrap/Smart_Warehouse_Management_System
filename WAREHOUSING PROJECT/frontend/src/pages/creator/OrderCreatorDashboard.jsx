@@ -17,6 +17,11 @@ function OrderCreatorDashboard() {
   });
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
+  
+  // New state for dropdowns
+  const [cities, setCities] = useState([]);
+  const [availableProducts, setAvailableProducts] = useState([]);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -35,8 +40,30 @@ function OrderCreatorDashboard() {
     }
   };
 
+  // Fetch cities for dropdown
+  const fetchCities = async () => {
+    try {
+      const res = await api.get('/locations');
+      setCities(res.data || []);
+    } catch (err) {
+      console.error('Error fetching cities:', err);
+    }
+  };
+
+  // Fetch available products for dropdown
+  const fetchAvailableProducts = async () => {
+    try {
+      const res = await api.get('/inventory/available');
+      setAvailableProducts(res.data || []);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchCities();
+    fetchAvailableProducts();
   }, []);
 
   const handleCreateOrder = async (e) => {
@@ -76,6 +103,7 @@ function OrderCreatorDashboard() {
       setTimeout(() => {
         setShowCreateModal(false);
         fetchOrders();
+        fetchAvailableProducts(); // Refresh products after order creation
       }, 1500);
     } catch (err) {
       setCreateError(err.response?.data?.error || 'Failed to create order');
@@ -111,6 +139,12 @@ function OrderCreatorDashboard() {
       DISPATCHED: 'success'
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
+  };
+
+  // Get available quantity for selected product
+  const getAvailableQuantity = (productName) => {
+    const product = availableProducts.find(p => p.product_name === productName);
+    return product ? product.quantity : 0;
   };
 
   return (
@@ -200,54 +234,83 @@ function OrderCreatorDashboard() {
 
             <Form.Group className="mb-3">
               <Form.Label>Delivery City</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter delivery city"
+              <Form.Select
                 value={createForm.delivery_city}
                 onChange={(e) => setCreateForm({ ...createForm, delivery_city: e.target.value })}
                 required
-              />
+              >
+                <option value="">Select a city</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </Form.Select>
+              {cities.length === 0 && (
+                <Form.Text className="text-muted">
+                  No cities available. Please contact administrator.
+                </Form.Text>
+              )}
             </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label>Items</Form.Label>
-              {createForm.items.map((item, index) => (
-                <Row key={index} className="mb-2">
-                  <Col md={5}>
-                    <Form.Control
-                      type="text"
-                      placeholder="Product name"
-                      value={item.product_name}
-                      onChange={(e) => updateItem(index, 'product_name', e.target.value)}
-                      required
-                    />
-                  </Col>
-                  <Col md={4}>
-                    <Form.Control
-                      type="number"
-                      placeholder="Quantity"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                      min="1"
-                      required
-                    />
-                  </Col>
-                  <Col md={3}>
-                    {createForm.items.length > 1 && (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => removeItemRow(index)}
+              {createForm.items.map((item, index) => {
+                const availableQty = getAvailableQuantity(item.product_name);
+                return (
+                  <Row key={index} className="mb-2">
+                    <Col md={5}>
+                      <Form.Select
+                        value={item.product_name}
+                        onChange={(e) => updateItem(index, 'product_name', e.target.value)}
+                        required
                       >
-                        Remove
-                      </Button>
-                    )}
-                  </Col>
-                </Row>
-              ))}
+                        <option value="">Select a product</option>
+                        {availableProducts.map((product) => (
+                          <option key={`${product.product_name}-${product.warehouse_id}`} value={product.product_name}>
+                            {product.product_name} (Available: {product.quantity})
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Control
+                        type="number"
+                        placeholder="Quantity"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                        min="1"
+                        max={availableQty}
+                        required
+                      />
+                      {item.product_name && (
+                        <Form.Text className="text-muted">
+                          Available: {availableQty} units
+                        </Form.Text>
+                      )}
+                    </Col>
+                    <Col md={3}>
+                      {createForm.items.length > 1 && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => removeItemRow(index)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </Col>
+                  </Row>
+                );
+              })}
               <Button variant="outline-secondary" size="sm" onClick={addItemRow}>
                 Add Item
               </Button>
+              {availableProducts.length === 0 && (
+                <Form.Text className="text-muted d-block mt-2">
+                  No products available in inventory. Please contact warehouse manager.
+                </Form.Text>
+              )}
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
@@ -265,4 +328,3 @@ function OrderCreatorDashboard() {
 }
 
 export default OrderCreatorDashboard;
-
