@@ -23,13 +23,10 @@ jobs:
       - name: Install Backend Dependencies
         run: npm install
         working-directory: WAREHOUSING PROJECT/backend
-<<<<<<< HEAD
 
       - name: Run Backend Tests
         run: npm test
         working-directory: WAREHOUSING PROJECT/backend
-=======
->>>>>>> a02bf496dbe13ef720c2195e6b1e96333490db94
 
       - name: Build Backend Docker Image
         run: docker build -t backend .
@@ -42,8 +39,4 @@ jobs:
 
       - name: Build Frontend Docker Image
         run: docker build -t frontend .
-<<<<<<< HEAD
         working-directory: WAREHOUSING PROJECT/frontend
-=======
-        working-directory: WAREHOUSING PROJECT/frontend
->>>>>>> a02bf496dbe13ef720c2195e6b1e96333490db94
