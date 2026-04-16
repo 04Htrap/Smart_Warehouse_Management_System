@@ -51,7 +51,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd ~/WAREHOUSING\ PROJECT
+            cd ~/Smart_Warehouse_Management_System/WAREHOUSING\ PROJECT
             git pull origin main
             docker-compose down
             docker-compose up --build -d
