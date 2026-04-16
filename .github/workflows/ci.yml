@@ -27,6 +27,8 @@ jobs:
       - name: Run Backend Tests
         run: npm test
         working-directory: WAREHOUSING PROJECT/backend
+        env:
+          NODE_ENV: test
 
       - name: Build Backend Docker Image
         run: docker build -t backend .
