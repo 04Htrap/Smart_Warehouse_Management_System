@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const app = require('../src/app');
 
 describe('Auth API', () => {
 
@@ -10,7 +10,7 @@ describe('Auth API', () => {
       password: "123456"
     });
 
-    expect(res.statusCode).toBeDefined(); // just check route works
+    expect(res.statusCode).toBeDefined();
   });
 
   it('should hit login route', async () => {
