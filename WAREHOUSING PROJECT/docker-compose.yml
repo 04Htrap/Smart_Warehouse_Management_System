@@ -1,9 +1,8 @@
-version: "3.8"
-
 services:
   db:
     image: postgres:14
     container_name: warehouse-db
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -12,13 +11,23 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init:/docker-entrypoint-initdb.d
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     container_name: warehouse-backend
     ports:
       - "3000:3000"
+
+    # WAIT FOR DB
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -26,11 +35,15 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: warehouse_db
 
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin123
+
   frontend:
     build: ./frontend
     container_name: warehouse-frontend
     ports:
       - "5174:5174"
+
     depends_on:
       - backend
 
