@@ -8,8 +8,8 @@ exports.getInventory = async (req, res) => {
         i.quantity,
         i.warehouse_id,
         w.name AS warehouse_name
-      FROM inventory i
-      JOIN warehouses w ON i.warehouse_id = w.id
+      FROM parth_schema.inventory i
+      JOIN parth_schema.warehouses w ON i.warehouse_id = w.id
       ORDER BY i.product_name;
     `;
 
@@ -29,8 +29,8 @@ exports.getAvailableProducts = async (req, res) => {
         i.quantity,
         i.warehouse_id,
         w.name AS warehouse_name
-      FROM inventory i
-      JOIN warehouses w ON i.warehouse_id = w.id
+      FROM parth_schema.inventory i
+      JOIN parth_schema.warehouses w ON i.warehouse_id = w.id
       WHERE i.quantity > 0
       ORDER BY i.product_name;
     `;
@@ -54,7 +54,7 @@ exports.getInventoryForecast = async (req, res) => {
             PARTITION BY product_name
             ORDER BY date DESC
           ) AS rn
-        FROM sales_records
+        FROM parth_schema.sales_records
       ),
       moving_avg AS (
         SELECT
@@ -69,7 +69,7 @@ exports.getInventoryForecast = async (req, res) => {
         i.quantity AS current_inventory,
         ROUND(ma.predicted_demand) AS predicted_demand,
         GREATEST(0, ROUND(ma.predicted_demand) - i.quantity) AS recommended_restock
-      FROM inventory i
+      FROM parth_schema.inventory i
       JOIN moving_avg ma
         ON i.product_name = ma.product_name
       ORDER BY recommended_restock DESC
@@ -106,7 +106,7 @@ exports.restockInventory = async (req, res) => {
 
     // Ensure product exists in products table (insert if it doesn't exist)
     await client.query(
-      `INSERT INTO products (product_name) 
+      `INSERT INTO parth_schema.products (product_name) 
        VALUES ($1) 
        ON CONFLICT (product_name) DO NOTHING`,
       [product_name]
@@ -114,7 +114,7 @@ exports.restockInventory = async (req, res) => {
 
     // Check if inventory record exists
     const checkResult = await client.query(
-      `SELECT quantity FROM inventory 
+      `SELECT quantity FROM parth_schema.inventory 
        WHERE product_name = $1 AND warehouse_id = $2`,
       [product_name, warehouse_id]
     );
@@ -122,7 +122,7 @@ exports.restockInventory = async (req, res) => {
     if (checkResult.rowCount === 0) {
       // Create new inventory record if it doesn't exist
       await client.query(
-        `INSERT INTO inventory (product_name, warehouse_id, quantity)
+        `INSERT INTO parth_schema.inventory (product_name, warehouse_id, quantity)
          VALUES ($1, $2, $3)`,
         [product_name, warehouse_id, quantity]
       );
@@ -139,7 +139,7 @@ exports.restockInventory = async (req, res) => {
 
     // Update existing inventory
     const updateResult = await client.query(
-      `UPDATE inventory 
+      `UPDATE parth_schema.inventory 
        SET quantity = quantity + $1 
        WHERE product_name = $2 AND warehouse_id = $3
        RETURNING quantity`,

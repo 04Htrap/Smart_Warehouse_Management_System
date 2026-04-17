@@ -16,9 +16,5 @@ if (process.env.NODE_ENV === 'test') {
     port: process.env.DB_PORT,
   });
 
-  pool.on('connect', (client) => {
-  client.query('SET search_path TO parth_schema');
-});
-
   module.exports = pool;
 }

@@ -5,7 +5,7 @@ exports.getLocations = async (req, res) => {
   try {
     const query = `
       SELECT id, name, latitude, longitude
-      FROM locations
+      FROM parth_schema.locations
       ORDER BY name;
     `;
 

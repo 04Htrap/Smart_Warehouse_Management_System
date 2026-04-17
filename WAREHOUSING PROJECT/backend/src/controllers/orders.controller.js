@@ -27,8 +27,8 @@ exports.getAllOrders = async (req, res) => {
           ) FILTER (WHERE oi.id IS NOT NULL),
           '[]'::json
         ) as items
-      FROM orders o
-      LEFT JOIN order_items oi ON o.id = oi.order_id
+      FROM parth_schema.orders o
+      LEFT JOIN parth_schema.order_items oi ON o.id = oi.order_id
     `;
     
     const queryParams = [];
@@ -79,7 +79,7 @@ exports.createOrder = async (req, res) => {
 
     // Create order with user_id to track who created it
     const orderResult = await client.query(
-      `INSERT INTO orders (warehouse_id, delivery_city, status, user_id)
+      `INSERT INTO parth_schema.orders (warehouse_id, delivery_city, status, user_id)
        VALUES ($1, $2, 'CREATED', $3)
        RETURNING id`,
       [warehouse_id, delivery_city, userId]
@@ -93,7 +93,7 @@ exports.createOrder = async (req, res) => {
 
       // Optional: check inventory availability (do NOT reduce)
       const stockCheck = await client.query(
-        `SELECT quantity FROM inventory
+        `SELECT quantity FROM parth_schema.inventory
          WHERE product_name = $1 AND warehouse_id = $2`,
         [product_name, warehouse_id]
       );
@@ -106,7 +106,7 @@ exports.createOrder = async (req, res) => {
       }
 
       await client.query(
-        `INSERT INTO order_items (order_id, product_name, quantity)
+        `INSERT INTO parth_schema.order_items (order_id, product_name, quantity)
          VALUES ($1, $2, $3)`,
         [orderId, product_name, quantity]
       );
@@ -135,7 +135,7 @@ exports.markOptimized = async (req, res) => {
   const { id } = req.params;
 
   const result = await pool.query(
-    `UPDATE orders
+    `UPDATE parth_schema.orders
      SET status = 'OPTIMIZED'
      WHERE id = $1 AND status = 'CREATED'
      RETURNING id`,
@@ -167,8 +167,8 @@ exports.dispatchOrder = async (req, res) => {
     // Fetch items only if order is OPTIMIZED
     const itemsResult = await client.query(
       `SELECT oi.product_name, oi.quantity, o.warehouse_id
-       FROM order_items oi
-       JOIN orders o ON oi.order_id = o.id
+       FROM parth_schema.order_items oi
+       JOIN parth_schema.orders o ON oi.order_id = o.id
        WHERE o.id = $1 AND o.status = 'OPTIMIZED'`,
       [id]
     );
@@ -180,7 +180,7 @@ exports.dispatchOrder = async (req, res) => {
     // Reduce inventory and record sales
     for (const item of itemsResult.rows) {
       const stockResult = await client.query(
-        `SELECT quantity FROM inventory
+        `SELECT quantity FROM parth_schema.inventory
          WHERE product_name = $1 AND warehouse_id = $2`,
         [item.product_name, item.warehouse_id]
       );
@@ -190,7 +190,7 @@ exports.dispatchOrder = async (req, res) => {
       }
 
       await client.query(
-        `UPDATE inventory
+        `UPDATE parth_schema.inventory
          SET quantity = quantity - $1
          WHERE product_name = $2 AND warehouse_id = $3`,
         [item.quantity, item.product_name, item.warehouse_id]
@@ -198,7 +198,7 @@ exports.dispatchOrder = async (req, res) => {
 
       // Ensure product exists in products table (required for foreign key constraint)
       await client.query(
-        `INSERT INTO products (product_name) 
+        `INSERT INTO parth_schema.products (product_name) 
          VALUES ($1) 
          ON CONFLICT (product_name) DO NOTHING`,
         [item.product_name]
@@ -206,7 +206,7 @@ exports.dispatchOrder = async (req, res) => {
 
       // Insert sales record
       await client.query(
-        `INSERT INTO sales_records (product_name, quantity_sold, date)
+        `INSERT INTO parth_schema.sales_records (product_name, quantity_sold, date)
          VALUES ($1, $2, CURRENT_DATE)`,
         [item.product_name, item.quantity]
       );
@@ -214,7 +214,7 @@ exports.dispatchOrder = async (req, res) => {
 
     // Update order status
     await client.query(
-      `UPDATE orders
+      `UPDATE parth_schema.orders
        SET status = 'DISPATCHED'
        WHERE id = $1`,
       [id]

@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, role, is_active)
+      `INSERT INTO parth_schema.users (name, email, password, role, is_active)
       VALUES ($1, $2, $3, 'ORDER_CREATOR', true)
       RETURNING id, role`,
       [name, email, hashedPassword]
@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   const result = await pool.query(
-    `SELECT * FROM users WHERE email = $1`,
+    `SELECT * FROM parth_schema.users WHERE email = $1`,
     [email]
   );
 

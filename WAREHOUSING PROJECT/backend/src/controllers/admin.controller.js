@@ -6,7 +6,7 @@ const pool = require('../config/db');
 exports.getAllUsers = async (req, res) => {
   const result = await pool.query(
     `SELECT id, name, email, role, is_active, created_at
-     FROM users
+     FROM parth_schema.users
      ORDER BY created_at`
   );
 
@@ -25,7 +25,7 @@ exports.updateUserRole = async (req, res) => {
   }
 
   const result = await pool.query(
-    `UPDATE users
+    `UPDATE parth_schema.users
      SET role = $1
      WHERE id = $2
      RETURNING id, role`,

@@ -5,7 +5,7 @@ exports.optimizeFromOrders = async (req, res) => {
   try {
     const ordersResult = await pool.query(
       `SELECT id, delivery_city
-       FROM orders
+       FROM parth_schema.orders
        WHERE status = 'OPTIMIZED'
        AND warehouse_id = 1`
     );
@@ -26,7 +26,7 @@ exports.optimizeFromOrders = async (req, res) => {
 
     const warehouseResult = await pool.query(
       `SELECT l.latitude, l.longitude
-       FROM warehouses w
+       FROM parth_schema.warehouses w
        JOIN locations l ON w.location_id = l.id
        WHERE w.id = 1`
     );
@@ -35,7 +35,7 @@ exports.optimizeFromOrders = async (req, res) => {
 
     const citiesResult = await pool.query(
       `SELECT name, latitude, longitude
-       FROM locations
+       FROM parth_schema.locations
        WHERE LOWER(name) = ANY($1::text[])`,
       [cities]
     );
